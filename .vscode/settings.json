@@ -1,0 +1,8 @@
+{
+    "python-envs.defaultEnvManager": "ms-python.python:system",
+    "python.defaultInterpreterPath": "D:\\WPy64-312100\\python\\python.exe",
+    "git.path": "D:\\PortableGit\\cmd\\git.exe",
+    "terminal.integrated.env.windows": {
+        "PATH": "D:\\PortableGit\\cmd;D:\\WPy64-312100\\python;D:\\WPy64-312100\\python\\Scripts;${env:PATH}"
+    }
+}
