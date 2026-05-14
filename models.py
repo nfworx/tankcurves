@@ -45,9 +45,9 @@ def get_head_parameters(head_type: str, da: float, s: float) -> HeadParameters:
 
     if head_type == "Elliptical Head 2:1":
         return HeadParameters(
-            r1_mm=None,
-            r2_mm=None,
-            h2_mm=da / 4 - s / 2,
+            r1_mm=0.9 * (da - 2*s),
+            r2_mm=0.17 * (da - 2*s),
+            h2_mm= (da-2*s)/4,
         )
 
     if head_type == "Hemispherical Head":
