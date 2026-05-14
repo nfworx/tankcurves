@@ -1,5 +1,7 @@
 import math
 
+import numpy as np
+
 from models import TankInput, get_head_parameters
 
 
@@ -49,7 +51,7 @@ def calculate_geometry_points(da, s, r1, r2, h2, L):
     dx = c2x - c1x
     dy = c2y - c1y
 
-    d = math.sqrt(dx**2 + dy**2)
+    d = math.hypot(dx, dy)
 
     if d == 0:
         raise ValueError("Invalid torospherical head geometry.")
@@ -151,43 +153,165 @@ def radius_flat_at_x(x, da, s, L):
     return 0
 
 
+# -------------------------------------------------
+# New internal helper
+# Keeps public function names unchanged
+# -------------------------------------------------
+
+def calculate_radius_profile(da, s, head_type, r1, r2, h2, L, dx=1.0):
+    x_values = np.arange(0.0, L + dx, dx)
+    R = da / 2 - s
+
+    if head_type in (
+        "Torospherical Head (DIN 28011)",
+        "Torospherical Head (DIN 28013)",
+    ):
+        radii = calculate_torospherical_radius_profile(
+            x_values, da, s, r1, r2, h2, L
+        )
+
+    elif head_type == "Elliptical Head 2:1":
+        radii = calculate_elliptical_2to1_radius_profile(
+            x_values, da, s, h2, L
+        )
+
+    elif head_type == "Hemispherical Head":
+        radii = calculate_hemispherical_radius_profile(
+            x_values, da, s, L
+        )
+
+    elif head_type == "Flat Head":
+        radii = np.full_like(x_values, R, dtype=float)
+
+    else:
+        raise ValueError(f"Unsupported head type: {head_type}")
+
+    radii = np.clip(radii, 0.0, R)
+
+    return x_values, radii
+
+
+def calculate_torospherical_radius_profile(x_values, da, s, r1, r2, h2, L):
+    R = da / 2 - s
+    radii = np.zeros_like(x_values, dtype=float)
+
+    x1, x2, x3, x4 = calculate_geometry_points(da, s, r1, r2, h2, L)
+
+    mask = (x_values >= 0) & (x_values < x1)
+    radii[mask] = np.sqrt(
+        np.maximum(r1**2 - (x_values[mask] - r1) ** 2, 0)
+    )
+
+    c2x = h2
+    c2y = R - r2
+    mask = (x_values >= x1) & (x_values < x2)
+    radii[mask] = c2y + np.sqrt(
+        np.maximum(r2**2 - (x_values[mask] - c2x) ** 2, 0)
+    )
+
+    mask = (x_values >= x2) & (x_values < L - h2)
+    radii[mask] = R
+
+    c2x = L - h2
+    mask = (x_values >= L - h2) & (x_values < x4)
+    radii[mask] = c2y + np.sqrt(
+        np.maximum(r2**2 - (x_values[mask] - c2x) ** 2, 0)
+    )
+
+    mask = (x_values >= x4) & (x_values <= L)
+    radii[mask] = np.sqrt(
+        np.maximum(r1**2 - (x_values[mask] - (L - r1)) ** 2, 0)
+    )
+
+    return radii
+
+
+def calculate_elliptical_2to1_radius_profile(x_values, da, s, h2, L):
+    R = da / 2 - s
+    radii = np.zeros_like(x_values, dtype=float)
+
+    if h2 <= 0:
+        return radii
+
+    mask = (x_values >= 0) & (x_values <= h2)
+    radii[mask] = R * np.sqrt(
+        np.maximum(1 - ((x_values[mask] - h2) / h2) ** 2, 0)
+    )
+
+    mask = (x_values > h2) & (x_values < L - h2)
+    radii[mask] = R
+
+    mask = (x_values >= L - h2) & (x_values <= L)
+    radii[mask] = R * np.sqrt(
+        np.maximum(1 - ((x_values[mask] - (L - h2)) / h2) ** 2, 0)
+    )
+
+    return radii
+
+
+def calculate_hemispherical_radius_profile(x_values, da, s, L):
+    R = da / 2 - s
+    radii = np.zeros_like(x_values, dtype=float)
+
+    mask = (x_values >= 0) & (x_values <= R)
+    radii[mask] = np.sqrt(
+        np.maximum(R**2 - (x_values[mask] - R) ** 2, 0)
+    )
+
+    mask = (x_values > R) & (x_values < L - R)
+    radii[mask] = R
+
+    mask = (x_values >= L - R) & (x_values <= L)
+    radii[mask] = np.sqrt(
+        np.maximum(R**2 - (x_values[mask] - (L - R)) ** 2, 0)
+    )
+
+    return radii
+
+
 def calculate_vertical(da, s, head_type, r1, r2, h2, L):
-    volume_m3 = 0
+    dx = 1.0
+
+    x_values, radii = calculate_radius_profile(
+        da, s, head_type, r1, r2, h2, L, dx
+    )
+
+    areas = math.pi * radii**2
+    segment_volumes = 0.5 * (areas[:-1] + areas[1:]) * dx
+    cumulative_volumes = np.cumsum(segment_volumes) * 1e-9
+
     result = []
 
-    for i in range(int(L) + 1):
-        fx = radius_at_x(i, da, s, head_type, r1, r2, h2, L) ** 2
-        fx1 = radius_at_x(i + 1, da, s, head_type, r1, r2, h2, L) ** 2
-
-        volume_m3 += math.pi * 0.5 * (fx + fx1) * 1e-9
-
-        if i % 10 == 0:
-            result.append((i / 10, volume_m3))
+    for i in range(0, len(cumulative_volumes), 10):
+        level_cm = x_values[i] / 10
+        volume_m3 = float(cumulative_volumes[i])
+        result.append((level_cm, volume_m3))
 
     return result
 
 
 def cross_section(z, xmin, xmax, dx, da, s, head_type, r1, r2, h2, L):
-    area = 0
-    steps = int((xmax - xmin) / dx) + 1
+    x_values, radii = calculate_radius_profile(
+        da, s, head_type, r1, r2, h2, L, dx
+    )
 
-    for i in range(steps):
-        x = xmin + i * dx
-        radius = radius_at_x(x, da, s, head_type, r1, r2, h2, L)
+    radii_squared = radii**2
+    z_squared = z**2
 
-        if z**2 <= radius**2:
-            height = 2 * math.sqrt(radius**2 - z**2)
-        else:
-            height = 0
+    inside = radii_squared >= z_squared
 
-        area += height * dx
+    heights = np.zeros_like(radii)
+    heights[inside] = 2 * np.sqrt(radii_squared[inside] - z_squared)
 
-    return area
+    area = np.trapz(heights, x_values)
+
+    return float(area)
 
 
 def calculate_horizontal(da, s, head_type, r1, r2, h2, L):
-    dx = 1
-    dz = 1
+    dx = 1.0
+    dz = 1.0
+
     volume_m3 = 0
     result = []
 
@@ -198,26 +322,27 @@ def calculate_horizontal(da, s, head_type, r1, r2, h2, L):
     z_min = int(-R)
     z_max = int(R)
 
-    for idx, z in enumerate(range(z_min, z_max + 1, dz)):
-        area = cross_section(
-            z,
-            x_min,
-            x_max,
-            dx,
-            da,
-            s,
-            head_type,
-            r1,
-            r2,
-            h2,
-            L,
-        )
+    x_values, radii = calculate_radius_profile(
+        da, s, head_type, r1, r2, h2, L, dx
+    )
+
+    radii_squared = radii**2
+
+    for idx, z in enumerate(range(z_min, z_max + 1, int(dz))):
+        z_squared = z**2
+
+        inside = radii_squared >= z_squared
+
+        heights = np.zeros_like(radii)
+        heights[inside] = 2 * np.sqrt(radii_squared[inside] - z_squared)
+
+        area = np.trapz(heights, x_values)
 
         volume_m3 += area * dz * 1e-9
 
         level = z + R
 
         if idx % 10 == 0:
-            result.append((level / 10, volume_m3))
+            result.append((level / 10, float(volume_m3)))
 
     return result
