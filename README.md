@@ -38,7 +38,7 @@ Built with **Python**, **NumPy** and **Streamlit**.
 
 🌐 Streamlit App:
 
-https://filling-curve-calculator.streamlit.app/
+https://tankcurves.streamlit.app/
 
 ---
 
@@ -162,4 +162,4 @@ MIT License
 
 # Author
 
-Developed by **nfischer-code**
+Developed by **nfworx**
