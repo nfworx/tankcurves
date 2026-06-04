@@ -14,7 +14,7 @@ TankCurves calculates the relationship between liquid level and contained volume
 * Multiple head geometries
 
   * Flat heads
-  * Torispherical heads (DIN 28011)
+  * Torospherical heads (DIN 28011)
   * Additional geometries can be added easily
 * Numerical filling curve calculation
 * Interactive Streamlit web application
@@ -35,7 +35,7 @@ For a horizontal vessel with:
 | Outer Diameter | 2000 mm                        |
 | Wall Thickness | 5 mm                           |
 | Length         | 5000 mm                        |
-| Head Type      | Torispherical Head (DIN 28011) |
+| Head Type      | Torospherical Head (DIN 28011) |
 
 TankCurves calculates:
 
@@ -75,15 +75,17 @@ The application will open in your browser.
 
 ## Project Structure
 
-```text
+```bash
 tankcurves/
 │
-├── calculation/        # Filling curve calculations
-├── drawing/            # Geometry visualizations
-├── models.py           # Data models
-├── validation.py       # Numerical verification and reference calculations
-├── app.py              # Streamlit application
-└── requirements.txt
+├── calculation/            # Core calculation algorithms
+├── drawing/                # Geometry visualizations
+├── tests/                  # Automated pytest test suite
+├── models.py               # Data models
+├── reference_volumes.py    # Reference volume calculations
+├── app.py                  # Streamlit application
+├── requirements.txt
+└── pytest.ini
 ```
 
 ---
@@ -92,11 +94,11 @@ tankcurves/
 
 1. Define vessel geometry
 2. Generate internal dimensions
-3. Calculate cross-sectional liquid area
-4. Integrate vessel volume along the vessel length
-5. Generate level-volume table
-6. Plot filling curve
-7. Validate against reference volume
+3. Generate vessel radius profile
+4. Calculate cross-sectional liquid area
+5. Numerically integrate vessel volume
+6. Generate level-volume table
+7. Verify results against analytical or engineering references
 
 ---
 
@@ -104,20 +106,32 @@ tankcurves/
 
 TankCurves compares numerically calculated vessel volumes against reference calculations.
 
-For geometries with analytical solutions, reference volumes are calculated using closed-form equations:
+### Analytical Reference Geometries
+* Flat Head
+* Hemispherical Head
+* Elliptical Head 2:1
 
-Flat Head
-Hemispherical Head
-Elliptical Head 2:1
-
-For engineering head geometries, reference volumes are calculated using commonly used engineering approximation formulas:
-
-Torospherical Head (DIN 28011)
-Torospherical Head (DIN 28013)
+### Engineering Reference Geometries
+* Torospherical Head (DIN 28011)
+* Torospherical Head (DIN 28013)
 
 The reported difference is intended for software verification and regression testing.
 
 For torospherical heads, the reported difference represents agreement with the engineering reference method and should not be interpreted as a certified measure of physical accuracy.
+
+---
+
+## Automated Testing
+
+TankCurves includes an automated pytest test suite covering:
+
+* Reference volume calculations
+* Filling curve generation
+* Radius profile generation
+* Geometry calculations
+* Numerical integration routines
+
+All tests are executed automatically through GitHub Actions on every push and pull request.
 
 ---
 
