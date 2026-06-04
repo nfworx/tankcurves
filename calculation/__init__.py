@@ -12,7 +12,7 @@ from calculation.integration import (
     calculate_horizontal,
     cross_section,
 )
-from calculation.profiles import (
+from calculation.radius_profiles import (
     calculate_radius_profile,
     calculate_torospherical_radius_profile,
     calculate_elliptical_2to1_radius_profile,

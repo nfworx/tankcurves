@@ -5,7 +5,7 @@ from calculation import calculate_filling_curve
 from drawing.tank_preview import draw_tank_preview
 from drawing.head_preview import draw_head_dimensions_preview
 from models import HEAD_TYPES, VESSEL_TYPES, TankInput, get_head_parameters
-from validation import validate_filling_curve
+from calculation.reference_volumes import validate_filling_curve
 
 ANALYTICAL_REFERENCE_HEADS = {
     "Flat Head",

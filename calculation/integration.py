@@ -3,7 +3,7 @@ import math
 import numpy as np
 
 from calculation.constants import DX_DEFAULT, DZ_DEFAULT, MM3_TO_M3
-from calculation.profiles import calculate_radius_profile
+from calculation.radius_profiles import calculate_radius_profile
 
 
 def trapezoid_integral(y, x):
