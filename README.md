@@ -1,165 +1,131 @@
-# Filling Curve Calculator
+# TankCurves
 
-Numerical filling curve calculator for rotationally symmetric vessels.
+Engineering tool for generating filling curves of horizontal and vertical storage tanks with different vessel head geometries.
 
-The application calculates filling curves for vertical and horizontal tanks with different head geometries using numerical integration methods.
+TankCurves calculates the relationship between liquid level and contained volume and provides graphical visualization, tabular results, and export capabilities.
 
-Built with **Python**, **NumPy** and **Streamlit**.
+![TankCurves Screenshot](docs/images/tankcurves-demo.png)
 
 ---
 
 ## Features
 
-### Vessel Types
+* Horizontal and vertical vessels
+* Multiple head geometries
 
-- Vertical tanks
-- Horizontal tanks
-
-### Supported Head Geometries
-
-- Flat Head
-- Hemispherical Head
-- Elliptical Head 2:1
-- Torospherical Head (DIN 28011)
-- Torospherical Head (DIN 28013)
-
-### Functionality
-
-- Numerical filling curve calculation
-- Interactive geometry preview
-- CSV export
-- Validation against analytical reference solutions
-- Optimized NumPy-based solver
-- Fast vectorized integration
+  * Flat heads
+  * Torispherical heads (DIN 28011)
+  * Additional geometries can be added easily
+* Numerical filling curve calculation
+* Interactive Streamlit web application
+* Vessel geometry preview
+* Head geometry visualization
+* Filling curve plotting
+* CSV export of level-volume tables
+* Validation against reference vessel volumes
 
 ---
 
-## Demo
+## Example
 
-🌐 Streamlit App:
+For a horizontal vessel with:
 
-https://tankcurves.streamlit.app/
+| Parameter      | Value                          |
+| -------------- | ------------------------------ |
+| Outer Diameter | 2000 mm                        |
+| Wall Thickness | 5 mm                           |
+| Length         | 5000 mm                        |
+| Head Type      | Torispherical Head (DIN 28011) |
+
+TankCurves calculates:
+
+* Total vessel volume
+* Filling curve
+* Level-volume lookup table
+* Numerical deviation from reference volume
 
 ---
 
-# Project Structure
+## Installation
+
+Clone the repository:
+
+```bash
+git clone https://github.com/nfworx/tankcurves.git
+cd tankcurves
+```
+
+Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+## Run the Streamlit App
+
+```bash
+streamlit run app.py
+```
+
+The application will open in your browser.
+
+---
+
+## Project Structure
 
 ```text
-filling_curve/
+tankcurves/
 │
-├── app.py
-├── models.py
-├── validation.py
-├── requirements.txt
-│
-├── calculation/
-│   ├── __init__.py
-│   ├── constants.py
-│   ├── filling_curve.py
-│   ├── geometry.py
-│   ├── profiles.py
-│   └── integration.py
-│
-├── drawing/
-│   ├── __init__.py
-│   ├── head_preview.py
-│   ├── tank_preview.py
-│   └── utilities.py
-│
-└── README.md
+├── calculation/        # Filling curve calculations
+├── drawing/            # Geometry visualizations
+├── models.py           # Data models
+├── validation.py       # Reference volume validation
+├── app.py              # Streamlit application
+└── requirements.txt
 ```
 
 ---
 
-# Numerical Method
+## Calculation Workflow
 
-The filling curve is generated using numerical integration of rotational cross sections.
-
-## Vertical Tanks
-
-The volume is calculated by integrating circular cross-sectional areas along the vessel axis:
-
-```math
-V = \int \pi r(x)^2 \, dx
-```
-
-## Horizontal Tanks
-
-The liquid cross section is discretized and integrated numerically over the vessel length and filling height.
-
-The solver uses NumPy vectorization for significantly improved performance compared to pure Python loops.
+1. Define vessel geometry
+2. Generate internal dimensions
+3. Calculate cross-sectional liquid area
+4. Integrate vessel volume along the vessel length
+5. Generate level-volume table
+6. Plot filling curve
+7. Validate against reference volume
 
 ---
 
-# Supported Head Geometries
+## Validation
 
-## Flat Head
+Calculated vessel volumes are compared against reference values.
 
-Idealized flat end plate.
+The resulting deviation is displayed to verify numerical accuracy.
 
-## Hemispherical Head
+Example:
 
-True hemispherical geometry.
-
-## Elliptical Head 2:1
-
-Standard 2:1 elliptical head approximation.
-
-## Torospherical Heads
-
-Implemented according to:
-
-- DIN 28011
-- DIN 28013
+| Numerical   | Reference   | Deviation |
+| ----------- | ----------- | --------- |
+| 14.68548 m³ | 14.70311 m³ | -0.1199 % |
 
 ---
 
-# Performance
+## Future Improvements
 
-The calculation engine was optimized using:
-
-- NumPy vectorization
-- Precomputed radius profiles
-- Reduced redundant geometry evaluations
-- Optimized numerical integration
-
-This significantly improves performance for large tanks and small integration step sizes.
-
----
-
-# Dependencies
-
-Main dependencies:
-
-- Python 3.12+
-- NumPy
-- Pandas
-- Streamlit
-- Matplotlib
+* Excel export
+* PDF reports
+* Plotly visualizations
+* Additional head geometries
+* Unit conversion support
+* Automated test suite
+* Python package distribution
 
 ---
 
-# Future Improvements
-
-Possible future extensions:
-
-- Plotly-based interactive charts
-- Adaptive integration step size
-- Tilted vessels
-- Nozzle offsets
-- Additional DIN/ASME head geometries
-- Excel export
-- Interactive filling animation
-- GPU/Numba acceleration
-
----
-
-# License
+## License
 
 MIT License
-
----
-
-# Author
-
-Developed by **nfworx**
