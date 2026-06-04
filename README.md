@@ -100,17 +100,11 @@ tankcurves/
 
 ---
 
-## Validation
+## Numerical Verification
 
-Calculated vessel volumes are compared against reference values.
+TankCurves uses numerical consistency checks and engineering reference calculations to verify the implementation.
 
-The resulting deviation is displayed to verify numerical accuracy.
-
-Example:
-
-| Numerical   | Reference   | Deviation |
-| ----------- | ----------- | --------- |
-| 14.68548 m³ | 14.70311 m³ | -0.1199 % |
+The reported deviations are intended for software verification and regression testing. They are not a formal measure of calculation accuracy, particularly for vessel head geometries where reference values are themselves approximate.
 
 ---
 
