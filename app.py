@@ -7,6 +7,11 @@ from drawing.head_preview import draw_head_dimensions_preview
 from models import HEAD_TYPES, VESSEL_TYPES, TankInput, get_head_parameters
 from validation import validate_filling_curve
 
+ANALYTICAL_REFERENCE_HEADS = {
+    "Flat Head",
+    "Hemispherical Head",
+    "Elliptical Head 2:1",
+}
 
 st.set_page_config(
     page_title="Tank-Curves",
@@ -283,12 +288,67 @@ if calculate_button:
 
         df = pd.DataFrame(result, columns=["Level (cm)", "Volume (m³)"])
 
+        is_analytical_reference = head_type in ANALYTICAL_REFERENCE_HEADS
+
+        verification_label = (
+            "Analytical Reference"
+            if is_analytical_reference
+            else "Engineering Reference"
+        )
+
+        if head_type == "Flat Head":
+            verification_help = (
+                "Analytical reference for a cylindrical vessel with flat heads:\n\n"
+                "V = π · R² · Lᵢ"
+            )
+
+        elif head_type == "Hemispherical Head":
+            verification_help = (
+                "Analytical reference for a cylindrical vessel with two hemispherical heads:\n\n"
+                "V = π · R² · (Lᵢ − 2R) + 4/3 · π · R³"
+            )
+
+        elif head_type == "Elliptical Head 2:1":
+            verification_help = (
+                "Analytical reference for a cylindrical vessel with two 2:1 elliptical heads:\n\n"
+                "V = π · R² · (Lᵢ − 2h) + 2 · (2/3 · π · R² · h)"
+            )
+
+        elif head_type == "Torospherical Head (DIN 28011)":
+            verification_help = (
+                "Engineering reference for a cylindrical vessel with to torospherical heads according to DIN 28011:\n\n"
+                "V ≈ π · R² · (Lᵢ − 2h) + 2 · 0.1 · (Dₐ − 2s)³"
+            )
+
+        elif head_type == "Torospherical Head (DIN 28013)":
+            verification_help = (
+                "Engineering reference for a cylindrical vessel with to torospherical heads according to DIN 28013:\n\n"
+                "V ≈ π · R² · (Lᵢ − 2h) + 2 · 0.1298 · (Dₐ − 2s)³"
+            )
+
+        else:
+            verification_help = (
+                "Reference volume used for comparison with the numerically calculated volume."
+            )
+
         with st.sidebar:
-            #st.divider()
+            # st.divider()
             st.subheader("Results")
-            st.metric("Numerical", f"{validation['numerical_volume_m3']:.5f} m³")
-            st.metric("Reference", f"{validation['reference_volume_m3']:.5f} m³")
-            st.metric("Deviation", f"{validation['deviation_percent']:.4f} %")
+            st.metric(
+                "Calculated Volume",
+                f"{validation['numerical_volume_m3']:.5f} m³",
+                help="Volume calculated numerically from the generated filling curve.",
+            )
+            st.metric(
+                verification_label,
+                f"{validation['reference_volume_m3']:.5f} m³",
+                help=verification_help,
+            )
+            st.metric(
+                "Difference",
+                f"{validation['deviation_percent']:.4f} %",
+                help="Relative difference between calculated volume and reference volume.",
+            )
 
         header_left, header_right = st.columns([1.35, 1])
 

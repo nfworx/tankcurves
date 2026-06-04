@@ -22,7 +22,7 @@ TankCurves calculates the relationship between liquid level and contained volume
 * Head geometry visualization
 * Filling curve plotting
 * CSV export of level-volume tables
-* Validation against reference vessel volumes
+* Numerical verification against analytical and engineering reference calculations
 
 ---
 
@@ -42,7 +42,7 @@ TankCurves calculates:
 * Total vessel volume
 * Filling curve
 * Level-volume lookup table
-* Numerical deviation from reference volume
+* Verification against analytical or engineering reference calculations
 
 ---
 
@@ -81,7 +81,7 @@ tankcurves/
 ├── calculation/        # Filling curve calculations
 ├── drawing/            # Geometry visualizations
 ├── models.py           # Data models
-├── validation.py       # Reference volume validation
+├── validation.py       # Numerical verification and reference calculations
 ├── app.py              # Streamlit application
 └── requirements.txt
 ```
@@ -102,9 +102,22 @@ tankcurves/
 
 ## Numerical Verification
 
-TankCurves uses numerical consistency checks and engineering reference calculations to verify the implementation.
+TankCurves compares numerically calculated vessel volumes against reference calculations.
 
-The reported deviations are intended for software verification and regression testing. They are not a formal measure of calculation accuracy, particularly for vessel head geometries where reference values are themselves approximate.
+For geometries with analytical solutions, reference volumes are calculated using closed-form equations:
+
+Flat Head
+Hemispherical Head
+Elliptical Head 2:1
+
+For engineering head geometries, reference volumes are calculated using commonly used engineering approximation formulas:
+
+Torospherical Head (DIN 28011)
+Torospherical Head (DIN 28013)
+
+The reported difference is intended for software verification and regression testing.
+
+For torospherical heads, the reported difference represents agreement with the engineering reference method and should not be interpreted as a certified measure of physical accuracy.
 
 ---
 
