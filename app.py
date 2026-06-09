@@ -2,10 +2,11 @@ import pandas as pd
 import streamlit as st
 
 from calculation import calculate_filling_curve
-from drawing.tank_preview import draw_tank_preview
-from drawing.head_preview import draw_head_dimensions_preview
-from models import HEAD_TYPES, VESSEL_TYPES, TankInput, get_head_parameters
 from calculation.reference_volumes import validate_filling_curve
+from drawing.head_preview import draw_head_dimensions_preview
+from drawing.tank_preview import draw_tank_preview
+from models import HEAD_TYPES, VESSEL_TYPES, TankInput, get_head_parameters
+
 
 ANALYTICAL_REFERENCE_HEADS = {
     "Flat Head",
@@ -13,159 +14,54 @@ ANALYTICAL_REFERENCE_HEADS = {
     "Elliptical Head 2:1",
 }
 
-st.set_page_config(
-    page_title="Tank-Curves",
-    layout="wide",
-)
-
-st.markdown("""
-<style>
-.block-container {
-    padding-top: 0.8rem;
-    padding-bottom: 0.8rem;
-    max-width: 1550px;
-}
-
-.main-title {
-    font-size: 0.8rem;
-    line-height: 1.0;
-    margin-bottom: 0.25rem;
-}
-            
-.section-title {
-    font-size: 1.45rem;
-    font-weight: 700;
-    line-height: 1.1;
-    margin-top: 0.2rem;
-    margin-bottom: 0.55rem;
-}
-
-h2, h3 {
-    margin-top: 0.25rem !important;
-    margin-bottom: 0.45rem !important;
-}
-
-/* Sidebar top spacing */
-section[data-testid="stSidebar"] > div {
-    padding-top: 0rem;
-}
-
-/* Sidebar compact layout */
-section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
-    gap: 0.45rem;
-}
-
-/* Sidebar headers */
-section[data-testid="stSidebar"] h1,
-section[data-testid="stSidebar"] h2,
-section[data-testid="stSidebar"] h3 {
-    margin-top: 0rem !important;
-    margin-bottom: 0.35rem !important;
-}
-
-/* Input labels tighter */
-section[data-testid="stSidebar"] label {
-    margin-bottom: 0rem !important;
-}
-
-/* Compact metrics */
-section[data-testid="stSidebar"] [data-testid="stMetric"] {
-    padding: 0.25rem 0.45rem;
-    border-radius: 0.45rem;
-}
-
-section[data-testid="stSidebar"] [data-testid="stMetricValue"] {
-    font-size: 1.25rem;
-}
-
-section[data-testid="stSidebar"] [data-testid="stMetricLabel"] {
-    font-size: 0.75rem;
-}
-
-.formula-card {
-    background-color: #173653;
-    border-radius: 0.5rem;
-    padding: 1.15rem 1.25rem;
-    min-height: 205px;
-    color: #2aa8ff;
-    font-size: 0.95rem;
-    line-height: 1.65;
-}
-
-.formula-card strong {
-    color: #2aa8ff;
-}
-</style>
-""", unsafe_allow_html=True)
-
-st.markdown("""<h1 class="main-title">TankCurves</h1>""", unsafe_allow_html=True)
+MM_PER_INCH = 25.4
+M3_TO_US_GAL = 264.172052
 
 
-horizontal_index = VESSEL_TYPES.index("Horizontal Tank") if "Horizontal Tank" in VESSEL_TYPES else 0
-
-with st.sidebar:
-    st.header("Input parameters")
-
-    vessel_type = st.selectbox(
-        "Vessel type",
-        VESSEL_TYPES,
-        index=horizontal_index,
-    )
-
-    head_type = st.selectbox("Head type", HEAD_TYPES)
-
-    outer_diameter_mm = st.number_input(
-        "Outer diameter (mm)",
-        min_value=1.0,
-        value=2000.0,
-        step=100.0,
-    )
-
-    wall_thickness_mm = st.number_input(
-        "Wall thickness (mm)",
-        min_value=0.0,
-        value=5.0,
-        step=1.0,
-    )
-
-    length_mm = st.number_input(
-        "Length (mm)",
-        min_value=1.0,
-        value=5000.0,
-        step=100.0,
-    )
-
-    calculate_button = st.button(
-        "Calculate",
-        type="primary",
-        use_container_width=True,
-    )
+def length_to_mm(value: float, unit_system: str) -> float:
+    if unit_system == "Imperial":
+        return value * MM_PER_INCH
+    return value
 
 
-head = get_head_parameters(
-    head_type,
-    outer_diameter_mm,
-    wall_thickness_mm,
-)
+def length_from_mm(value_mm: float, unit_system: str) -> float:
+    if unit_system == "Imperial":
+        return value_mm / MM_PER_INCH
+    return value_mm
 
-inner_diameter_mm = outer_diameter_mm - 2 * wall_thickness_mm
-inner_length_mm = length_mm - 2 * wall_thickness_mm
-head_height_mm = head.h2_mm
+def level_from_mm(value_mm: float, unit_system: str) -> float:
+    if unit_system == "Imperial":
+        return value_mm / MM_PER_INCH
+
+    return value_mm / 10.0
+
+def volume_from_m3(value_m3: float, unit_system: str) -> float:
+    if unit_system == "Imperial":
+        return value_m3 * M3_TO_US_GAL
+    return value_m3
 
 
-fig_tank = draw_tank_preview(
-    vessel_type=vessel_type,
-    head_type=head_type,
-    outer_diameter_mm=outer_diameter_mm,
-    wall_thickness_mm=wall_thickness_mm,
-    length_mm=length_mm,
-)
+def length_unit(unit_system: str) -> str:
+    return "inch" if unit_system == "Imperial" else "mm"
 
-fig_head = draw_head_dimensions_preview(
-    head_type=head_type,
-    outer_diameter_mm=outer_diameter_mm,
-    wall_thickness_mm=wall_thickness_mm,
-)
+def level_unit(unit_system: str) -> str:
+    return "inch" if unit_system == "Imperial" else "cm"
+
+def volume_unit(unit_system: str) -> str:
+    return "US gal" if unit_system == "Imperial" else "m³"
+
+def level_step_mm(unit_system: str) -> float:
+    return MM_PER_INCH if unit_system == "Imperial" else 10.0
+
+
+def format_length(value_mm: float, unit_system: str) -> str:
+    unit = length_unit(unit_system)
+    value = length_from_mm(value_mm, unit_system)
+
+    if unit_system == "Imperial":
+        return f"{value:.3f} {unit}"
+
+    return f"{value:.1f} {unit}"
 
 
 def get_formula_box(head_type: str) -> str:
@@ -232,22 +128,183 @@ def render_formula_card(markdown_text: str) -> None:
     )
 
 
+st.set_page_config(
+    page_title="Tank-Curves",
+    layout="wide",
+)
+
+st.markdown("""
+<style>
+.block-container {
+    padding-top: 0.8rem;
+    padding-bottom: 0.8rem;
+    max-width: 1550px;
+}
+
+.main-title {
+    font-size: 0.8rem;
+    line-height: 1.0;
+    margin-bottom: 0.25rem;
+}
+            
+.section-title {
+    font-size: 1.45rem;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-top: 0.2rem;
+    margin-bottom: 0.55rem;
+}
+
+h2, h3 {
+    margin-top: 0.25rem !important;
+    margin-bottom: 0.45rem !important;
+}
+
+section[data-testid="stSidebar"] > div {
+    padding-top: 0rem;
+}
+
+section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
+    gap: 0.45rem;
+}
+
+section[data-testid="stSidebar"] h1,
+section[data-testid="stSidebar"] h2,
+section[data-testid="stSidebar"] h3 {
+    margin-top: 0rem !important;
+    margin-bottom: 0.35rem !important;
+}
+
+section[data-testid="stSidebar"] label {
+    margin-bottom: 0rem !important;
+}
+
+section[data-testid="stSidebar"] [data-testid="stMetric"] {
+    padding: 0.25rem 0.45rem;
+    border-radius: 0.45rem;
+}
+
+section[data-testid="stSidebar"] [data-testid="stMetricValue"] {
+    font-size: 1.25rem;
+}
+
+section[data-testid="stSidebar"] [data-testid="stMetricLabel"] {
+    font-size: 0.75rem;
+}
+
+.formula-card {
+    background-color: #173653;
+    border-radius: 0.5rem;
+    padding: 1.15rem 1.25rem;
+    min-height: 205px;
+    color: #2aa8ff;
+    font-size: 0.95rem;
+    line-height: 1.65;
+}
+
+.formula-card strong {
+    color: #2aa8ff;
+}
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("""<h1 class="main-title">TankCurves</h1>""", unsafe_allow_html=True)
+
+
+horizontal_index = VESSEL_TYPES.index("Horizontal Tank") if "Horizontal Tank" in VESSEL_TYPES else 0
+
+with st.sidebar:
+    st.header("Input parameters")
+
+    vessel_type = st.selectbox(
+        "Vessel type",
+        VESSEL_TYPES,
+        index=horizontal_index,
+    )
+
+    head_type = st.selectbox("Head type", HEAD_TYPES)
+
+    unit_system = st.radio(
+        "Unit system",
+        ["Metric", "Imperial"],
+        horizontal=True,
+    )
+
+    input_length_unit = length_unit(unit_system)
+
+    outer_diameter_input = st.number_input(
+        f"Outer diameter ({input_length_unit})",
+        min_value=0.001,
+        value=2000.0 if unit_system == "Metric" else round(2000.0 / MM_PER_INCH, 3),
+        step=100.0 if unit_system == "Metric" else 1.0,
+    )
+
+    wall_thickness_input = st.number_input(
+        f"Wall thickness ({input_length_unit})",
+        min_value=0.0,
+        value=5.0 if unit_system == "Metric" else round(5.0 / MM_PER_INCH, 3),
+        step=1.0 if unit_system == "Metric" else 0.1,
+    )
+
+    length_input = st.number_input(
+        f"Length ({input_length_unit})",
+        min_value=0.001,
+        value=5000.0 if unit_system == "Metric" else round(5000.0 / MM_PER_INCH, 3),
+        step=100.0 if unit_system == "Metric" else 1.0,
+    )
+
+    outer_diameter_mm = length_to_mm(outer_diameter_input, unit_system)
+    wall_thickness_mm = length_to_mm(wall_thickness_input, unit_system)
+    length_mm = length_to_mm(length_input, unit_system)
+
+    calculate_button = st.button(
+        "Calculate",
+        type="primary",
+        use_container_width=True,
+    )
+
+
+head = get_head_parameters(
+    head_type,
+    outer_diameter_mm,
+    wall_thickness_mm,
+)
+
+inner_diameter_mm = outer_diameter_mm - 2 * wall_thickness_mm
+inner_length_mm = length_mm - 2 * wall_thickness_mm
+head_height_mm = head.h2_mm
+
+fig_tank = draw_tank_preview(
+    vessel_type=vessel_type,
+    head_type=head_type,
+    outer_diameter_mm=outer_diameter_mm,
+    wall_thickness_mm=wall_thickness_mm,
+    length_mm=length_mm,
+)
+
+fig_head = draw_head_dimensions_preview(
+    head_type=head_type,
+    outer_diameter_mm=outer_diameter_mm,
+    wall_thickness_mm=wall_thickness_mm,
+)
+
+
 geometry_data = {
     "Vessel type": vessel_type,
     "Head type": head_type,
-    "dₐ": f"{outer_diameter_mm:.1f} mm",
-    "dᵢ": f"{inner_diameter_mm:.1f} mm",
-    "s": f"{wall_thickness_mm:.1f} mm",
-    "L": f"{length_mm:.1f} mm",
-    "Inner length": f"{inner_length_mm:.1f} mm",
-    "h": f"{head_height_mm:.1f} mm",
+    "dₐ": format_length(outer_diameter_mm, unit_system),
+    "dᵢ": format_length(inner_diameter_mm, unit_system),
+    "s": format_length(wall_thickness_mm, unit_system),
+    "L": format_length(length_mm, unit_system),
+    "Inner length": format_length(inner_length_mm, unit_system),
+    "h": format_length(head_height_mm, unit_system),
 }
 
 if head.r1_mm is not None:
-    geometry_data["r₁"] = f"{head.r1_mm:.1f} mm"
+    geometry_data["r₁"] = format_length(head.r1_mm, unit_system)
 
 if head.r2_mm is not None:
-    geometry_data["r₂"] = f"{head.r2_mm:.1f} mm"
+    geometry_data["r₂"] = format_length(head.r2_mm, unit_system)
 
 
 st.dataframe(
@@ -283,10 +340,32 @@ if calculate_button:
 
     try:
         with st.spinner("Calculating filling curve..."):
-            result = calculate_filling_curve(tank)
+            result = calculate_filling_curve(
+                tank,
+                level_step_mm=level_step_mm(unit_system),
+            )
             validation = validate_filling_curve(tank)
 
-        df = pd.DataFrame(result, columns=["Level (cm)", "Volume (m³)"])
+        df = pd.DataFrame(result, columns=["Level (mm)", "Volume (m³)"])
+
+        level_display_unit = level_unit(unit_system)
+        volume_display_unit = volume_unit(unit_system)
+
+        levels = df["Level (mm)"].apply(
+            lambda value: level_from_mm(value, unit_system)
+        )
+
+        if unit_system == "Imperial":
+            levels = levels.round(0).astype(int)
+        else:
+            levels = levels.round(1)
+
+        df_display = pd.DataFrame({
+            f"Level ({level_display_unit})": levels,
+            f"Volume ({volume_display_unit})": df["Volume (m³)"].apply(
+                lambda value: volume_from_m3(value, unit_system)
+            ),
+        })
 
         is_analytical_reference = head_type in ANALYTICAL_REFERENCE_HEADS
 
@@ -316,13 +395,13 @@ if calculate_button:
 
         elif head_type == "Torospherical Head (DIN 28011)":
             verification_help = (
-                "Engineering reference for a cylindrical vessel with to torospherical heads according to DIN 28011:\n\n"
+                "Engineering reference for a cylindrical vessel with two torospherical heads according to DIN 28011:\n\n"
                 "V ≈ π · R² · (Lᵢ − 2h) + 2 · 0.1 · (Dₐ − 2s)³"
             )
 
         elif head_type == "Torospherical Head (DIN 28013)":
             verification_help = (
-                "Engineering reference for a cylindrical vessel with to torospherical heads according to DIN 28013:\n\n"
+                "Engineering reference for a cylindrical vessel with two torospherical heads according to DIN 28013:\n\n"
                 "V ≈ π · R² · (Lᵢ − 2h) + 2 · 0.1298 · (Dₐ − 2s)³"
             )
 
@@ -332,16 +411,15 @@ if calculate_button:
             )
 
         with st.sidebar:
-            # st.divider()
             st.subheader("Results")
             st.metric(
                 "Calculated Volume",
-                f"{validation['numerical_volume_m3']:.5f} m³",
+                f"{volume_from_m3(validation['numerical_volume_m3'], unit_system):.5f} {volume_display_unit}",
                 help="Volume calculated numerically from the generated filling curve.",
             )
             st.metric(
                 verification_label,
-                f"{validation['reference_volume_m3']:.5f} m³",
+                f"{volume_from_m3(validation['reference_volume_m3'], unit_system):.5f} {volume_display_unit}",
                 help=verification_help,
             )
             st.metric(
@@ -358,11 +436,14 @@ if calculate_button:
         col_plot, col_table = st.columns([1.35, 1])
 
         with col_plot:
-            st.line_chart(df.set_index("Level (cm)"), height=300)
+            st.line_chart(
+                df_display.set_index(f"Level ({level_display_unit})"),
+                height=300,
+            )
 
         with col_table:
             st.dataframe(
-                df,
+                df_display,
                 width="stretch",
                 height=300,
             )

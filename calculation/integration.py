@@ -12,8 +12,29 @@ def trapezoid_integral(y, x):
 
     return np.trapz(y, x)
 
+def interpolate_result(levels_mm, volumes_m3, level_step_mm):
+    max_level_mm = levels_mm[-1]
 
-def calculate_vertical(da, s, head_type, r1, r2, h2, L):
+    target_levels_mm = np.arange(
+        0.0,
+        max_level_mm + level_step_mm,
+        level_step_mm,
+    )
+
+    target_levels_mm = target_levels_mm[target_levels_mm <= max_level_mm]
+
+    target_volumes_m3 = np.interp(
+        target_levels_mm,
+        levels_mm,
+        volumes_m3,
+    )
+
+    return [
+        (float(level_mm), float(volume_m3))
+        for level_mm, volume_m3 in zip(target_levels_mm, target_volumes_m3)
+    ]
+
+def calculate_vertical(da, s, head_type, r1, r2, h2, L, level_step_mm=10.0):
     dx = DX_DEFAULT
 
     x_values, radii = calculate_radius_profile(
@@ -24,14 +45,10 @@ def calculate_vertical(da, s, head_type, r1, r2, h2, L):
     segment_volumes = 0.5 * (areas[:-1] + areas[1:]) * dx
     cumulative_volumes = np.cumsum(segment_volumes) * MM3_TO_M3
 
-    result = []
+    levels_mm = x_values[1:]
+    volumes_m3 = cumulative_volumes
 
-    for i in range(0, len(cumulative_volumes), 10):
-        level_cm = x_values[i] / 10
-        volume_m3 = float(cumulative_volumes[i])
-        result.append((level_cm, volume_m3))
-
-    return result
+    return interpolate_result(levels_mm, volumes_m3, level_step_mm)
 
 
 def cross_section(z, xmin, xmax, dx, da, s, head_type, r1, r2, h2, L):
@@ -52,12 +69,9 @@ def cross_section(z, xmin, xmax, dx, da, s, head_type, r1, r2, h2, L):
     return float(area)
 
 
-def calculate_horizontal(da, s, head_type, r1, r2, h2, L):
+def calculate_horizontal(da, s, head_type, r1, r2, h2, L, level_step_mm=10.0):
     dx = DX_DEFAULT
     dz = DZ_DEFAULT
-
-    volume_m3 = 0.0
-    result = []
 
     R = da / 2 - s
 
@@ -69,7 +83,12 @@ def calculate_horizontal(da, s, head_type, r1, r2, h2, L):
 
     radii_squared = radii**2
 
-    for idx, z in enumerate(z_values):
+    levels_mm = []
+    volumes_m3 = []
+
+    volume_m3 = 0.0
+
+    for z in z_values:
         z_squared = z**2
 
         inside = radii_squared >= z_squared
@@ -81,9 +100,12 @@ def calculate_horizontal(da, s, head_type, r1, r2, h2, L):
 
         volume_m3 += area * dz * MM3_TO_M3
 
-        level = z + R
+        level_mm = z + R
 
-        if idx % 10 == 0:
-            result.append((level / 10, float(volume_m3)))
+        levels_mm.append(level_mm)
+        volumes_m3.append(volume_m3)
 
-    return result
+    levels_mm = np.array(levels_mm)
+    volumes_m3 = np.array(volumes_m3)
+
+    return interpolate_result(levels_mm, volumes_m3, level_step_mm)
