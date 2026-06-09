@@ -3,3 +3,4 @@ pandas
 matplotlib
 numpy>=1.26,<3
 pytest
+openpyxl

@@ -1,5 +1,7 @@
 import pandas as pd
 import streamlit as st
+from io import BytesIO
+from openpyxl import Workbook
 
 from calculation import calculate_filling_curve
 from calculation.reference_volumes import validate_filling_curve
@@ -63,6 +65,74 @@ def format_length(value_mm: float, unit_system: str) -> str:
 
     return f"{value:.1f} {unit}"
 
+def create_excel_file(
+    geometry_data,
+    validation,
+    df_display,
+    unit_system,
+    volume_display_unit,
+):
+    output = BytesIO()
+
+    workbook = Workbook()
+    worksheet = workbook.active
+    worksheet.title = "Tank Curve"
+
+    calculated_volume = volume_from_m3(
+        validation["numerical_volume_m3"],
+        unit_system,
+    )
+    reference_volume = volume_from_m3(
+        validation["reference_volume_m3"],
+        unit_system,
+    )
+
+    worksheet["A1"] = "Parameter"
+    worksheet["B1"] = "Value"
+
+    row = 2
+
+    for key, value in geometry_data.items():
+        worksheet.cell(row=row, column=1, value=key)
+        worksheet.cell(row=row, column=2, value=value)
+        row += 1
+
+    worksheet.cell(row=row + 1, column=1, value="Calculated Volume")
+    worksheet.cell(
+        row=row + 1,
+        column=2,
+        value=f"{calculated_volume:.5f} {volume_display_unit}",
+    )
+
+    worksheet.cell(row=row + 2, column=1, value="Reference Volume")
+    worksheet.cell(
+        row=row + 2,
+        column=2,
+        value=f"{reference_volume:.5f} {volume_display_unit}",
+    )
+
+    worksheet.cell(row=row + 3, column=1, value="Difference")
+    worksheet.cell(
+        row=row + 3,
+        column=2,
+        value=f"{validation['deviation_percent']:.4f} %",
+    )
+
+    worksheet["D1"] = df_display.columns[0]
+    worksheet["E1"] = df_display.columns[1]
+
+    for excel_row, (_, data_row) in enumerate(df_display.iterrows(), start=2):
+        worksheet.cell(row=excel_row, column=4, value=float(data_row.iloc[0]))
+        worksheet.cell(row=excel_row, column=5, value=float(data_row.iloc[1]))
+
+    worksheet.column_dimensions["A"].width = 24
+    worksheet.column_dimensions["B"].width = 24
+    worksheet.column_dimensions["C"].width = 4
+    worksheet.column_dimensions["D"].width = 18
+    worksheet.column_dimensions["E"].width = 18
+
+    workbook.save(output)
+    return output.getvalue()
 
 def get_formula_box(head_type: str) -> str:
     if head_type == "Torospherical Head (DIN 28011)":
@@ -296,7 +366,7 @@ geometry_data = {
     "dᵢ": format_length(inner_diameter_mm, unit_system),
     "s": format_length(wall_thickness_mm, unit_system),
     "L": format_length(length_mm, unit_system),
-    "Inner length": format_length(inner_length_mm, unit_system),
+    "Lᵢ": format_length(inner_length_mm, unit_system),
     "h": format_length(head_height_mm, unit_system),
 }
 
@@ -445,7 +515,24 @@ if calculate_button:
             st.dataframe(
                 df_display,
                 width="stretch",
-                height=300,
+                height=230,
+                hide_index=True,
+            )
+
+            excel_data = create_excel_file(
+                geometry_data,
+                validation,
+                df_display,
+                unit_system,
+                volume_display_unit,
+            )
+
+            st.download_button(
+                label="Download Excel",
+                data=excel_data,
+                file_name="tank_filling_curve.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True,
             )
 
     except Exception as error:

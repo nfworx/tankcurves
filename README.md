@@ -1,8 +1,8 @@
 # TankCurves
 
-Engineering tool for generating filling curves of horizontal and vertical storage tanks with different vessel head geometries.
+Engineering tool for generating filling curves of horizontal and vertical storage tanks with multiple vessel head geometries.
 
-TankCurves calculates the relationship between liquid level and contained volume and provides graphical visualization, tabular results, and export capabilities.
+TankCurves calculates the relationship between liquid level and contained volume and provides graphical visualization, tabular results, Excel export, and built-in volume verification.
 
 ![TankCurves Screenshot](docs/images/tankcurves-demo.png)
 
@@ -10,19 +10,53 @@ TankCurves calculates the relationship between liquid level and contained volume
 
 ## Features
 
-* Horizontal and vertical vessels
-* Multiple head geometries
+### Vessel Types
 
-  * Flat heads
-  * Torospherical heads (DIN 28011)
-  * Additional geometries can be added easily
+* Horizontal tanks
+* Vertical tanks
+
+### Supported Head Geometries
+
+* Flat heads
+* Hemispherical heads
+* Elliptical heads (2:1)
+* Torospherical heads (DIN 28011)
+* Torospherical heads (DIN 28013)
+
+### Engineering Features
+
 * Numerical filling curve calculation
-* Interactive Streamlit web application
+* Analytical and engineering reference volume validation
+* Automatic deviation reporting
+* Internal geometry calculation from wall thickness
+* Metric and Imperial unit support
+
+### Visualization
+
 * Vessel geometry preview
 * Head geometry visualization
-* Filling curve plotting
-* CSV export of level-volume tables
-* Numerical verification against analytical and engineering reference calculations
+* Interactive filling curve plotting
+* Level-volume lookup table
+
+### Export
+
+* Excel export (.xlsx)
+* Geometry summary export
+* Filling curve export
+
+### User Interface
+
+* Interactive Streamlit web application
+* Metric units (mm, cm, m³)
+* Imperial units (inch, US gal)
+
+---
+
+## Why TankCurves?
+
+Many online tank volume calculators only provide total vessel volume.
+
+TankCurves generates complete filling curves, supports multiple engineering head geometries, validates results against reference calculations, and exports ready-to-use calibration tables for industrial applications.
 
 ---
 
@@ -42,7 +76,8 @@ TankCurves calculates:
 * Total vessel volume
 * Filling curve
 * Level-volume lookup table
-* Verification against analytical or engineering reference calculations
+* Engineering reference volume
+* Relative deviation
 
 ---
 
@@ -63,26 +98,25 @@ pip install -r requirements.txt
 
 ---
 
-## Run the Streamlit App
+## Run the Application
 
 ```bash
 streamlit run app.py
 ```
 
-The application will open in your browser.
+The application will open automatically in your browser.
 
 ---
 
 ## Project Structure
 
-```bash
+```text
 tankcurves/
 │
-├── calculation/            # Core calculation algorithms
-├── drawing/                # Geometry visualizations
-├── tests/                  # Automated pytest test suite
-├── models.py               # Data models
-├── reference_volumes.py    # Reference volume calculations
+├── calculation/            # Numerical calculation algorithms
+├── drawing/                # Vessel and head visualizations
+├── tests/                  # Automated test suite
+├── models.py               # Geometry models
 ├── app.py                  # Streamlit application
 ├── requirements.txt
 └── pytest.ini
@@ -93,31 +127,34 @@ tankcurves/
 ## Calculation Workflow
 
 1. Define vessel geometry
-2. Generate internal dimensions
+2. Calculate internal dimensions
 3. Generate vessel radius profile
-4. Calculate cross-sectional liquid area
+4. Calculate liquid cross-sections
 5. Numerically integrate vessel volume
-6. Generate level-volume table
-7. Verify results against analytical or engineering references
+6. Generate filling curve
+7. Validate results against reference calculations
+8. Export results to Excel
 
 ---
 
 ## Numerical Verification
 
-TankCurves compares numerically calculated vessel volumes against reference calculations.
+TankCurves compares numerically calculated vessel volumes against analytical or engineering reference calculations.
 
 ### Analytical Reference Geometries
+
 * Flat Head
 * Hemispherical Head
 * Elliptical Head 2:1
 
 ### Engineering Reference Geometries
+
 * Torospherical Head (DIN 28011)
 * Torospherical Head (DIN 28013)
 
-The reported difference is intended for software verification and regression testing.
+The reported deviation is intended for software verification and regression testing.
 
-For torospherical heads, the reported difference represents agreement with the engineering reference method and should not be interpreted as a certified measure of physical accuracy.
+For torospherical heads, the reported deviation represents agreement with the selected engineering reference method and should not be interpreted as a certified measure of physical accuracy.
 
 ---
 
@@ -125,8 +162,8 @@ For torospherical heads, the reported difference represents agreement with the e
 
 TankCurves includes an automated pytest test suite covering:
 
-* Reference volume calculations
 * Filling curve generation
+* Reference volume calculations
 * Radius profile generation
 * Geometry calculations
 * Numerical integration routines
@@ -137,14 +174,10 @@ All tests are executed automatically through GitHub Actions on every push and pu
 
 ## Future Improvements
 
-* Excel export
-* PDF reports
-* Plotly visualizations
 * Additional head geometries
-* Unit conversion support
-* Automated test suite
-* Python package distribution
-
+* Tilted tank support
+* Additional export formats
+* Improved visualizations
 ---
 
 ## License
